@@ -1,18 +1,31 @@
 #include "Renderer.h"
 
+#include "MyUtility.h"
+#include "MeshLoader.h"
+#include "Math.h"
+
+#include <iostream>
+#include <simd/simd.h>
+
 const int Renderer::kMaxFramesInFlight = 3;
 
 Renderer::Renderer( MTL::Device* pDevice )
-: _pDevice( pDevice->retain() )
+: _pDevice( pDevice->retain() ), _frame(0), _pRenderDataManager()
 {
     _pCommandQueue = _pDevice->newCommandQueue();
     _semaphore = dispatch_semaphore_create(Renderer::kMaxFramesInFlight);
     buildShaders();
     buildBuffers();
+
+    newSetup();
 }
 
 Renderer::~Renderer()
 {
+    _pVertexPositionBuffer->release();
+    _pVertexColorsBuffer->release();
+    _pPS0->release();
+    _pShaderLibrary->release();
     _pCommandQueue->release();
     _pDevice->release();
 }
@@ -87,10 +100,51 @@ void Renderer::buildBuffers() {
     _pVertexColorsBuffer = _pDevice->newBuffer(colors, colorDataSize, MTL::ResourceStorageModeShared);
 }
 
-void Renderer::draw( MTK::View* pView )
-{
+void Renderer::newSetup() { 
+    Mesh tempMesh = MeshLoader::load_mesh("meshes/cow.obj", _pDevice);
+
+    _pRenderDataManager.addMesh("cow", tempMesh);
+
+    shader_types::InstanceData instanceData;
+    instanceData.worldTransform = Math::identity();
+    _pRenderDataManager.addInstance("cow", instanceData);
+
+    _pRenderDataManager.setCameraTransform(Math::identity(), _frame);
+    _pRenderDataManager.setProjectionTransform(Math::projection(0.5), _frame);
+
+    // TEMP
+    const Mesh& mesh = _pRenderDataManager.getMesh("cow"); 
+
+    MTL::Buffer* pVertexPositionBuffer = _pDevice->newBuffer(mesh.mVertexData.data(), mesh.mVertexData.size() * sizeof(simd::float3), MTL::ResourceStorageModeShared);
+    MTL::Buffer* pVertexIndexBuffer = _pDevice->newBuffer(mesh.mIndexData.data(), mesh.mIndexData.size() * sizeof(uint16_t), MTL::ResourceStorageModeShared);
+    MTL::Buffer* pInstanceDataBuffer = _pDevice->newBuffer(_pRenderDataManager.getInstanceData("cow").data(), 
+    _pRenderDataManager.getInstanceData("cow").size() * sizeof(shader_types::InstanceData), MTL::ResourceStorageModeShared);
+
+    MTL::Buffer* pCameraTransformBuffer = _pDevice->newBuffer(sizeof(simd::float4x4), MTL::ResourceStorageModeShared);
+    MTL::Buffer* pProjectionTransformBuffer = _pDevice->newBuffer(sizeof(simd::float4x3), MTL::ResourceStorageModeShared);
+
+    *reinterpret_cast<simd::float4x4*>(pCameraTransformBuffer->contents()) = _pRenderDataManager.getCameraTransform(_frame);
+    *reinterpret_cast<simd::float4x3*>(pProjectionTransformBuffer->contents()) = _pRenderDataManager.getProjectionTransform(_frame);
+
+    _pVertexPositionBuffer = pVertexPositionBuffer;
+    _pVertexIndexBuffer = pVertexIndexBuffer;
+    _pInstanceDataBuffer = pInstanceDataBuffer;
+    _pCameraTransformBuffer = pCameraTransformBuffer;
+    _pProjectionTransformBuffer = pProjectionTransformBuffer;
+
+    std::cout << "DURING SETUP" << std::endl;
+    std::cout << "Vertex data size: " << mesh.mVertexData.size() << std::endl;
+    std::cout << "Index data size: " << mesh.mIndexData.size() << std::endl;
+    std::cout << "Instance data size: " << _pRenderDataManager.getInstanceData("cow").size() << std::endl;
+    std::cout << "Camera transform buffer length: " << _pCameraTransformBuffer->length() << std::endl;
+    std::cout << "Projection transform buffer length: " << _pProjectionTransformBuffer->length() << std::endl;
+    std::cout << std::endl; 
+}
+
+void Renderer::draw( MTK::View* pView ) { 
     NS::AutoreleasePool* pPool = NS::AutoreleasePool::alloc()->init();
 
+    _frame = (_frame + 1) % kMaxFramesInFlight;
     MTL::CommandBuffer *pCmd = _pCommandQueue->commandBuffer();
 
     dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
@@ -104,16 +158,30 @@ void Renderer::draw( MTK::View* pView )
     MTL::RenderCommandEncoder* pEnc = pCmd->renderCommandEncoder(pRpd);
 
     pEnc->setRenderPipelineState(_pPS0);
+
+    // TESTING OUT
+
     pEnc->setVertexBuffer(_pVertexPositionBuffer, 0, 0);
-    pEnc->setVertexBuffer(_pVertexColorsBuffer, 0, 1);
+    pEnc->setVertexBuffer(_pInstanceDataBuffer, 0, 1);
+    pEnc->setVertexBuffer(_pCameraTransformBuffer, 0, 2);
+    pEnc->setVertexBuffer(_pProjectionTransformBuffer, 0, 3);
 
-    pEnc->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(3));
+    // draw as wireframe
+    pEnc->setTriangleFillMode(MTL::TriangleFillMode::TriangleFillModeLines);
 
+    pEnc->drawIndexedPrimitives( 
+        MTL::PrimitiveType::PrimitiveTypeTriangle,
+        _pVertexIndexBuffer->length() / sizeof(uint16_t), 
+        MTL::IndexType::IndexTypeUInt16,
+        _pVertexIndexBuffer,
+        0,
+        _pRenderDataManager.getInstanceData("cow").size()
+    ); 
+
+    // TESTING OUT END
     pEnc->endEncoding();
-
 
     pCmd->presentDrawable(pView->currentDrawable());
     pCmd->commit();
-
     pPool->release();
 }

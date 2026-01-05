@@ -1,25 +1,10 @@
-//
-// Created by Abdullah Faiz ur rahman on 22/12/2025.
-//
-
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "MyUtility.h"
-
-#include <iostream>
-
 #include <Metal/Metal.hpp>
-#include "Metal/MTLResource.hpp"
-#include <AppKit/AppKit.hpp>
 #include <MetalKit/MetalKit.hpp>
-#include <simd/simd.h>
 
-#include <Foundation/Foundation.hpp>
-#include <Metal/Metal.hpp>
-#include <QuartzCore/QuartzCore.hpp>
-
-#include "MeshLoader.h"
+#include "RenderDataManager.h"
 
 class Renderer
 {
@@ -28,22 +13,34 @@ class Renderer
         ~Renderer();
         void buildShaders();
         void buildBuffers();
+
         void draw( MTK::View* pView );
 
     private:
         MTL::Device* _pDevice;
 
-        MTL::Library* _pShaderLibrary;
-        MTL::RenderPipelineState* _pPS0; // idk if there is some attaching that happens with it...
+        MTL::Library* _pShaderLibrary; // remove
+        MTL::RenderPipelineState* _pPS0;  // remove
 
         MTL::CommandQueue* _pCommandQueue;
-        MTL::Buffer *_pVertexPositionBuffer;
-        MTL::Buffer *_pVertexColorsBuffer;
-        MTL::Buffer* _pArgBuffer;
+        MTL::Buffer *_pVertexPositionBuffer; // remove
+        MTL::Buffer *_pVertexColorsBuffer; // remove
+
+        int _frame;
 
         // dont really see how these are used:
         dispatch_semaphore_t _semaphore;
         static const int kMaxFramesInFlight;
+
+        // TESTING OUT
+        void newSetup();
+        RenderDataManager _pRenderDataManager;
+
+        // MTL::Buffer *_pVertexPositionBuffer;
+        MTL::Buffer *_pVertexIndexBuffer;
+        MTL::Buffer *_pInstanceDataBuffer;
+        MTL::Buffer *_pCameraTransformBuffer;
+        MTL::Buffer *_pProjectionTransformBuffer;
 };
 
 #endif //RENDERER_H

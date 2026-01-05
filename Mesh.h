@@ -1,7 +1,15 @@
+#ifndef MESH_H
+#define MESH_H
 
-#include "Metal/MTLBuffer.hpp"
+#include <simd/simd.h>
+
+#include <string>
+#include <vector>
 
 struct Mesh { 
-    MTL::Buffer* vertexBuffer;
-    MTL::Buffer* indexBuffer;
+    std::string name;
+    std::vector<simd::float3> mVertexData;
+    std::vector<uint16_t> mIndexData;
 };
+
+#endif //MESH_H

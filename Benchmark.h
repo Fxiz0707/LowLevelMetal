@@ -1,7 +1,3 @@
-//
-// Created by Abdullah Faiz ur rahman on 18/12/2025.
-//
-
 #ifndef BENCHMARK_H
 #define BENCHMARK_H
 

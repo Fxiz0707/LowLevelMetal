@@ -1,8 +1,5 @@
-//
-// Created by Abdullah Faiz ur rahman on 22/12/2025.
-//
-
 #include "MyAppDelegate.h"
+#include "InputMTKView.h"
 
 MyAppDelegate::~MyAppDelegate()
 {
@@ -64,7 +61,7 @@ void MyAppDelegate::applicationWillFinishLaunching( NS::Notification* pNotificat
 
 void MyAppDelegate::applicationDidFinishLaunching( NS::Notification* pNotification )
 {
-    CGRect frame = (CGRect){ {100.0, 100.0}, {512.0, 512.0} };
+    CGRect frame = (CGRect){ {100.0, 100.0}, {768.0, 768.0} };
 
     _pWindow = NS::Window::alloc()->init(
         frame,
@@ -74,11 +71,13 @@ void MyAppDelegate::applicationDidFinishLaunching( NS::Notification* pNotificati
 
     _pDevice = MTL::CreateSystemDefaultDevice();
 
-    _pMtkView = MTK::View::alloc()->init( frame, _pDevice );
+    // Create custom MTKView with input handling
+    void* viewPtr = CreateInputMTKView(frame, _pDevice, &_inputHandler);
+    _pMtkView = reinterpret_cast<MTK::View*>(viewPtr);
     _pMtkView->setColorPixelFormat( MTL::PixelFormat::PixelFormatBGRA8Unorm_sRGB );
     _pMtkView->setClearColor( MTL::ClearColor::Make( 1.0, 0.0, 0.0, 1.0 ) );
 
-    _pViewDelegate = new MyMTKViewDelegate( _pDevice );
+    _pViewDelegate = new MyMTKViewDelegate( _pDevice, &_inputHandler );
     _pMtkView->setDelegate( _pViewDelegate );
 
     _pWindow->setContentView( _pMtkView );

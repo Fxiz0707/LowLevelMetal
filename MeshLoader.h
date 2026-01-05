@@ -1,21 +1,18 @@
+#ifndef MESH_LOADER_H
+#define MESH_LOADER_H
 
-
-// #include "Metal/MTLBuffer.hpp"
 #include <Metal/Metal.hpp>
 #include <simd/simd.h>
 
-#include <string>
-#include <string_view>
+#include <filesystem>
 #include <fstream>
-#include <vector>
-#include <tuple>
 #include <iostream>
 #include <ranges>
-#include <unordered_map>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "Mesh.h"
-#include "Metal/MTLResource.hpp"
-
 
 // loads meshes from .obj files
 struct MeshLoader { 
@@ -25,6 +22,9 @@ struct MeshLoader {
         and it only works for faces that dont have the / (no tex coords, no normal coords etc)
     */
     static Mesh load_mesh(std::string fullPath, MTL::Device* pDevice) { 
+        std::filesystem::path pathObj(fullPath);
+        std::string fileName = std::filesystem::path(fullPath).stem().string();
+
         std::ifstream fin(fullPath);
 
         std::vector<simd::float3> vertex_vector;
@@ -53,22 +53,25 @@ struct MeshLoader {
             else if (category == "f") // dealing with index data
             { 
                 it++;
-                uint16_t i1 = std::stoi(std::string((*it).begin(), (*it).end()));
+                uint16_t i1 = std::stoi(std::string((*it).begin(), (*it).end())) - 1;
                 it++;
-                uint16_t i2 = std::stoi(std::string((*it).begin(), (*it).end()));
+                uint16_t i2 = std::stoi(std::string((*it).begin(), (*it).end())) - 1;
                 it++;
-                uint16_t i3 = std::stof(std::string((*it).begin(), (*it).end()));
+                uint16_t i3 = std::stoi(std::string((*it).begin(), (*it).end())) - 1;
                 
                 index_vector.push_back(i1);
                 index_vector.push_back(i2);
                 index_vector.push_back(i3);
             }
         }
-        
+
         Mesh rv;
-        rv.vertexBuffer = pDevice->newBuffer(&vertex_vector[0], sizeof(simd::float3) * vertex_vector.size(), MTL::ResourceStorageModeShared);
-        rv.indexBuffer = pDevice->newBuffer(&index_vector[0], sizeof(uint16_t) * index_vector.size(), MTL::ResourceStorageModeShared);
+        rv.name = fileName;
+        rv.mVertexData = vertex_vector; 
+        rv.mIndexData = index_vector; 
 
         return rv;
     };
 };
+
+#endif //MESH_LOADER_H

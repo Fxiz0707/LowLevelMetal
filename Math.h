@@ -1,3 +1,6 @@
+#ifndef MATH_H
+#define MATH_H
+
 #include <cmath>
 #include <simd/simd.h>
 
@@ -41,5 +44,6 @@ struct Math {
         simd::float3 col3 = {0.f, 0.f, 0.f};
         return simd::float4x3(col0, col1, col2, col3);
     }
-
 };
+
+#endif //MATH_H

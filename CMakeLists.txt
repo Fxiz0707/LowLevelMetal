@@ -17,6 +17,8 @@ add_executable(exploring_blas main.cpp
         Benchmark.h
         App.cpp
         App.h
+        ApplicationState.cpp
+        ApplicationState.h
         MyAppDelegate.cpp
         MyAppDelegate.h
         MyMTKViewDelegate.cpp
@@ -24,11 +26,27 @@ add_executable(exploring_blas main.cpp
         Renderer.mm
         Renderer.h
         MyUtility.cpp
-        MyUtility.h)
+        MyUtility.h
+        MeshLoader.h
+        Mesh.h
+        Math.h
+        ShaderTypes.h
+        RenderDataManager.h
+        RenderDataManager.cpp
+        InputHandler.h
+        InputHandler.cpp
+        InputMTKView.h
+        InputMTKView.mm
+)
 
 target_link_libraries(exploring_blas PRIVATE BLAS::BLAS METAL_CPP)
 
-# Copy shaders to build directory
-file(COPY "${CMAKE_SOURCE_DIR}/shaders" DESTINATION "${CMAKE_BINARY_DIR}")
-file(COPY "${CMAKE_SOURCE_DIR}/meshes" DESTINATION "${CMAKE_BINARY_DIR}")
+# Copy shaders and meshes to build directory on EVERY build (always runs)
+add_custom_target(copy_assets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_BINARY_DIR}/shaders
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/meshes ${CMAKE_BINARY_DIR}/meshes
+    COMMENT "Copying shaders and meshes to build directory")
+
+# Ensure assets are copied before running the executable
+add_dependencies(exploring_blas copy_assets)
 

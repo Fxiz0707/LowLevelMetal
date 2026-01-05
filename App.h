@@ -1,17 +1,10 @@
-//
-// Created by Abdullah Faiz ur rahman on 21/12/2025.
-//
-
 #ifndef APP_H
 #define APP_H
 
-#include <Foundation/Foundation.hpp>
-#include <Metal/Metal.hpp>
-#include <QuartzCore/QuartzCore.hpp>
-#include <MetalKit/MetalKit.hpp>
 #include <AppKit/AppKit.hpp>
+#include <Metal/Metal.hpp>
+#include <MetalKit/MetalKit.hpp>
 
-#include <iostream>
 #include <chrono>
 
 #pragma region Declarations {
@@ -86,5 +79,3 @@ public:
     void user_input() {
     }
 };
-
-#endif //APP_H

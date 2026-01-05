@@ -1,7 +1,3 @@
-//
-// Created by Abdullah Faiz ur rahman on 22/12/2025.
-//
-
 #ifndef MYAPPDELEGATE_H
 #define MYAPPDELEGATE_H
 
@@ -10,6 +6,7 @@
 #include <MetalKit/MetalKit.hpp>
 
 #include "MyMTKViewDelegate.h"
+#include "InputHandler.h"
 
 class MyAppDelegate : public NS::ApplicationDelegate
 {
@@ -22,11 +19,15 @@ class MyAppDelegate : public NS::ApplicationDelegate
         virtual void applicationDidFinishLaunching( NS::Notification* pNotification ) override;
         virtual bool applicationShouldTerminateAfterLastWindowClosed( NS::Application* pSender ) override;
 
+        // Access input state from anywhere
+        InputHandler* getInputHandler() { return &_inputHandler; }
+
     private:
         NS::Window* _pWindow;
         MTK::View* _pMtkView;
         MTL::Device* _pDevice;
         MyMTKViewDelegate* _pViewDelegate = nullptr;
+        InputHandler _inputHandler;
 };
 
 #endif //MYAPPDELEGATE_H
